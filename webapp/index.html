@@ -115,7 +115,7 @@
 
 <div class="manager-block">
   <div class="manager-text">Возникли проблемы или вопросы?<br>Напишите нашему менеджеру!</div>
-    <a href="https://t.me/il0pka" target="_blank" class="manager-btn">Написать</a>
+  <a href="https://t.me/твой_менеджер" target="_blank" class="manager-btn">Написать</a>
 </div>
 
 <div id="status">Загрузка каталога…</div>
@@ -243,11 +243,18 @@ function applyFilters() {
   
   if (state.activeCategory) {
     let validCatIds = [state.activeCategory];
-    state.categories.forEach(c => {
-      if (c.parent_id === state.activeCategory) {
-        validCatIds.push(c.id);
-      }
-    });
+    
+    // РЕКУРСИВНЫЙ СБОР ВСЕХ ВЛОЖЕННЫХ ПОДКАТЕГОРИЙ
+    const collectChildIds = (parentId) => {
+      state.categories.forEach(c => {
+        if (c.parent_id === parentId) {
+          validCatIds.push(c.id);
+          collectChildIds(c.id); // Идём глубже
+        }
+      });
+    };
+    collectChildIds(state.activeCategory);
+    
     arr = arr.filter(p => validCatIds.includes(p.category_id));
   }
   
