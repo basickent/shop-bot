@@ -1,4 +1,5 @@
 import json
+import os
 import sqlite3
 import sys
 import time
@@ -15,8 +16,17 @@ urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 BASE = "https://5kuodgqfnjel.moysklad.shop/desktop-api/public/5kuodgqfnjel"
 HEADERS = {"User-Agent": "Mozilla/5.0", "Accept": "application/json"}
 TIMEOUT = 30
-PAGE_SIZE = 500
 
+def load_custom_prices() -> dict:
+    if os.path.exists("prices.json"):
+        try:
+            with open("prices.json", "r", encoding="utf-8") as f:
+                return json.load(f)
+        except Exception as e:
+            print(f"[parser] Ошибка чтения prices.json: {e}", file=sys.stderr)
+    return {}
+
+CUSTOM_PRICES = load_custom_prices()
 
 def _get(path: str, **params) -> dict | list:
     url = f"{BASE}/{path}"
@@ -26,43 +36,32 @@ def _get(path: str, **params) -> dict | list:
             r.raise_for_status()
             return r.json()
         except Exception as e:
-            if attempt == 2:
-                raise
+            if attempt == 2: raise
             print(f"[retry {attempt+1}] {url}: {e}", file=sys.stderr)
             time.sleep(2 ** attempt)
     return {}
 
-
 def fetch_categories() -> list[dict]:
     data = _get("categories.json")
-    if isinstance(data, list):
-        return data
-    return data.get("categories") or []
-
+    return data if isinstance(data, list) else data.get("categories") or []
 
 def fetch_all_products() -> list[dict]:
-    items: list[dict] = []
-    offset = 0
+    items, offset = [], 0
     while True:
-        data = _get("products.json", offset=offset, limit=PAGE_SIZE)
+        data = _get("products.json", offset=offset, limit=500)
         batch = data.get("products") or []
-        if not batch:
-            break
+        if not batch: break
         items.extend(batch)
         total = data.get("size") or 0
         offset += len(batch)
         print(f"[parser] fetched {offset}/{total}")
-        if offset >= total:
-            break
+        if offset >= total: break
         time.sleep(0.3)
     return items
-
 
 def _norm_product(p: dict) -> dict:
     pid = str(p.get("id") or "")
     base_price = float(p.get("price") or 0)
-    
-    # Если для товара задана кастомная цена в prices.json — берем её
     custom_price = CUSTOM_PRICES.get(pid)
     final_price = float(custom_price) if custom_price is not None else base_price
 
@@ -84,7 +83,6 @@ def _norm_category(c: dict) -> dict:
         "path_name": c.get("pathName") or "",
     }
 
-
 def save_to_db(categories: list[dict], products: list[dict]) -> None:
     init_db()
     ts = datetime.now(timezone.utc).isoformat(timespec="seconds")
@@ -98,11 +96,10 @@ def save_to_db(categories: list[dict], products: list[dict]) -> None:
         conn.executemany(
             "INSERT INTO products(id,name,category_id,price,image_url,description,available,updated_at)"
             " VALUES(?,?,?,?,?,?,?,?)",
-            [(p["id"], p["name"], p["category_id"], p["price"], p["image_url"],
+            [(p["id"], p["name"], p["category_id"], p["price"], "", 
               p["description"], p["available"], ts) for p in products],
         )
         conn.commit()
-
 
 def export_catalog_json(categories: list[dict], products: list[dict]) -> None:
     CATALOG_JSON_PATH.parent.mkdir(parents=True, exist_ok=True)
@@ -113,23 +110,43 @@ def export_catalog_json(categories: list[dict], products: list[dict]) -> None:
     }
     with open(CATALOG_JSON_PATH, "w", encoding="utf-8") as f:
         json.dump(payload, f, ensure_ascii=False, separators=(",", ":"))
-    print(f"[parser] catalog.json: {len(payload['products'])} товаров в наличии")
-
+    print(f"[parser] catalog.json: {len(payload['products'])} товаров")
 
 def run() -> None:
     print("[parser] fetch categories…")
-    categories = [_norm_category(c) for c in fetch_categories()]
+    raw_categories = fetch_categories()
+    
+    filtered_raw_cats = [
+        c for c in raw_categories 
+        if "акци" not in (c.get("name") or "").lower()
+    ]
+    categories = [_norm_category(c) for c in filtered_raw_cats]
+    valid_cat_ids = {c["id"] for c in categories}
+    
+    categories.append({
+        "id": "fallback_other",
+        "name": "Разное",
+        "parent_id": None,
+        "path_name": "Разное"
+    })
+    
     print(f"[parser] categories: {len(categories)}")
 
     print("[parser] fetch products…")
     raw_products = fetch_all_products()
-    products = [_norm_product(p) for p in raw_products]
+    
+    products = []
+    for p in raw_products:
+        norm_p = _norm_product(p)
+        if norm_p["category_id"] not in valid_cat_ids:
+            norm_p["category_id"] = "fallback_other"
+        products.append(norm_p)
+        
     print(f"[parser] products: {len(products)}")
 
     save_to_db(categories, products)
     export_catalog_json(categories, products)
-    print(f"[parser] OK → {DB_PATH} + {CATALOG_JSON_PATH}")
-
+    print(f"[parser] OK")
 
 if __name__ == "__main__":
     run()

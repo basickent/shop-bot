@@ -66,12 +66,10 @@ async def admin_choose_cat(call: CallbackQuery):
         
     kb = []
     if subs:
-        # Если есть подкатегории (бренды) — показываем их
         for s in subs:
             kb.append([InlineKeyboardButton(text=f"📁 {s[1]}", callback_data=f"admin_sub:{s[0]}")])
         kb.append([InlineKeyboardButton(text="📦 Все товары этой категории", callback_data=f"admin_items:{cat_id}")])
     else:
-        # Если подкатегорий нет, сразу даем менять цену категории или список товаров
         kb.append([InlineKeyboardButton(text="📦 Выбрать товар", callback_data=f"admin_items:{cat_id}")])
         kb.append([InlineKeyboardButton(text="📂 Изменить цену на ВСЮ категорию", callback_data=f"admin_set_price:cat:{cat_id}")])
         
@@ -120,7 +118,7 @@ async def admin_list_items(call: CallbackQuery):
 @dp.callback_query(F.data.startswith("admin_set_price:"))
 async def admin_set_cat_price(call: CallbackQuery, state: FSMContext):
     parts = call.data.split(":")
-    mode = parts[1] # 'cat' или 'sub'
+    mode = parts[1]
     target_id = parts[2]
     
     async with aiosqlite.connect(DB_PATH) as db:

@@ -39,7 +39,6 @@
   .selects select:focus { border-color: var(--accent); }
   .hidden { display: none !important; }
 
-  /* Блок менеджера */
   .manager-block {
     margin: 10px 12px; padding: 12px; border-radius: 12px;
     background: rgba(36, 129, 204, 0.1); border: 1px solid rgba(36, 129, 204, 0.2);
@@ -114,10 +113,9 @@
   </div>
 </header>
 
-<!-- Блок менеджера на главной -->
 <div class="manager-block">
   <div class="manager-text">Возникли проблемы или вопросы?<br>Напишите нашему менеджеру!</div>
-  <a href="https://t.me/твой_менеджер" target="_blank" class="manager-btn">Написать</a>
+    <a href="https://t.me/il0pka" target="_blank" class="manager-btn">Написать</a>
 </div>
 
 <div id="status">Загрузка каталога…</div>
@@ -208,7 +206,7 @@ function renderCategories() {
   const subSel = document.getElementById('cat-sub');
   const roots = state.categories.filter(c => !c.parent_id);
   
-  if (!roots.length) return; // Если категорий нет в JSON, ничего не рисуем
+  if (!roots.length) return;
   
   rootSel.innerHTML = `<option value="">Все категории</option>` + 
     roots.map(c => `<option value="${esc(c.id)}">${esc(c.name)}</option>`).join('');
@@ -242,11 +240,22 @@ function renderCategories() {
 
 function applyFilters() {
   let arr = state.products;
-  if (state.activeCategory) arr = arr.filter(p => p.category_id === state.activeCategory);
+  
+  if (state.activeCategory) {
+    let validCatIds = [state.activeCategory];
+    state.categories.forEach(c => {
+      if (c.parent_id === state.activeCategory) {
+        validCatIds.push(c.id);
+      }
+    });
+    arr = arr.filter(p => validCatIds.includes(p.category_id));
+  }
+  
   if (state.searchQuery) {
     const q = state.searchQuery.toLowerCase();
     arr = arr.filter(p => p.name.toLowerCase().includes(q));
   }
+  
   state.filtered = arr;
   render(true);
   window.scrollTo({ top: 0, behavior: 'instant' });

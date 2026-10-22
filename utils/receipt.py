@@ -1,7 +1,6 @@
 from html import escape
 
 def fmt_price(amount: float) -> str:
-    # Форматирует 15.5 в "15.50 Br", а 15.0 в "15 Br"
     s = f"{amount:.2f}".replace(".00", "")
     return f"{s} Br"
 
