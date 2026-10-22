@@ -59,17 +59,22 @@ def fetch_all_products() -> list[dict]:
 
 
 def _norm_product(p: dict) -> dict:
+    pid = str(p.get("id") or "")
+    base_price = float(p.get("price") or 0)
+    
+    # Если для товара задана кастомная цена в prices.json — берем её
+    custom_price = CUSTOM_PRICES.get(pid)
+    final_price = float(custom_price) if custom_price is not None else base_price
+
     return {
-        "id": str(p.get("id") or ""),
+        "id": pid,
         "name": (p.get("name") or "").strip(),
         "category_id": str(p.get("categoryId") or "") or None,
-        "price": float(p.get("price") or 0),
-        "image_url": p.get("imageURL") or "",
+        "price": final_price,
         "description": (p.get("description") or "").strip(),
         "available": 1 if p.get("available") else 0,
         "stock": float(p.get("stock") or 0),
     }
-
 
 def _norm_category(c: dict) -> dict:
     return {
