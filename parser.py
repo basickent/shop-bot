@@ -21,10 +21,13 @@ def load_custom_prices() -> dict:
     if os.path.exists("prices.json"):
         try:
             with open("prices.json", "r", encoding="utf-8") as f:
-                return json.load(f)
+                data = json.load(f)
+                if "items" not in data and "categories" not in data:
+                    return {"items": data, "categories": {}}
+                return data
         except Exception as e:
             print(f"[parser] Ошибка чтения prices.json: {e}", file=sys.stderr)
-    return {}
+    return {"items": {}, "categories": {}}
 
 CUSTOM_PRICES = load_custom_prices()
 
@@ -59,16 +62,33 @@ def fetch_all_products() -> list[dict]:
         time.sleep(0.3)
     return items
 
-def _norm_product(p: dict) -> dict:
+def _norm_product(p: dict, cat_map: dict) -> dict:
     pid = str(p.get("id") or "")
+    cat_id = str(p.get("categoryId") or "") or None
     base_price = float(p.get("price") or 0)
-    custom_price = CUSTOM_PRICES.get(pid)
-    final_price = float(custom_price) if custom_price is not None else base_price
+    
+    custom_items = CUSTOM_PRICES.get("items", {})
+    custom_cats = CUSTOM_PRICES.get("categories", {})
+
+    final_price = base_price
+
+    # 1. Проверяем цену конкретного товара
+    if pid in custom_items:
+        final_price = float(custom_items[pid])
+    else:
+        # 2. Ищем цену по всей цепочке родителей (подкатегория -> категория -> и т.д.)
+        current_cat = cat_id
+        while current_cat:
+            if current_cat in custom_cats:
+                final_price = float(custom_cats[current_cat])
+                break # Нашли цену на самом высоком доступном уровне
+            # Идем к родителю
+            current_cat = cat_map.get(current_cat, {}).get("parent_id")
 
     return {
         "id": pid,
         "name": (p.get("name") or "").strip(),
-        "category_id": str(p.get("categoryId") or "") or None,
+        "category_id": cat_id,
         "price": final_price,
         "description": (p.get("description") or "").strip(),
         "available": 1 if p.get("available") else 0,
@@ -116,28 +136,19 @@ def run() -> None:
     print("[parser] fetch categories…")
     raw_categories = fetch_categories()
     
-    filtered_raw_cats = [
-        c for c in raw_categories 
-        if "акци" not in (c.get("name") or "").lower()
-    ]
+    filtered_raw_cats = [c for c in raw_categories if "акци" not in (c.get("name") or "").lower()]
     categories = [_norm_category(c) for c in filtered_raw_cats]
     valid_cat_ids = {c["id"] for c in categories}
     
-    categories.append({
-        "id": "fallback_other",
-        "name": "Разное",
-        "parent_id": None,
-        "path_name": "Разное"
-    })
-    
-    print(f"[parser] categories: {len(categories)}")
+    categories.append({"id": "fallback_other", "name": "Разное", "parent_id": None, "path_name": "Разное"})
+    cat_map = {c["id"]: c for c in categories}
 
     print("[parser] fetch products…")
     raw_products = fetch_all_products()
     
     products = []
     for p in raw_products:
-        norm_p = _norm_product(p)
+        norm_p = _norm_product(p, cat_map)
         if norm_p["category_id"] not in valid_cat_ids:
             norm_p["category_id"] = "fallback_other"
         products.append(norm_p)

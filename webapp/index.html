@@ -17,8 +17,8 @@
   header { position: sticky; top: 0; z-index: 10; background: var(--bg); padding: 8px 12px; border-bottom: 1px solid rgba(127,127,127,.12); display: flex; flex-direction: column; gap: 8px; }
   #search { width: 100%; padding: 10px 14px; font-size: 16px; border-radius: 10px; border: 1px solid rgba(127,127,127,.2); background: var(--bg2); color: var(--fg); outline: none; }
   #search:focus { border-color: var(--accent); }
-  .selects { display: flex; gap: 8px; }
-  .selects select { flex: 1; padding: 10px 14px; border-radius: 10px; border: 1px solid rgba(127,127,127,.2); background: var(--bg2); color: var(--fg); outline: none; font-size: 14px; }
+  .selects { display: flex; flex-direction: column; gap: 8px; }
+  .selects select { width: 100%; padding: 10px 14px; border-radius: 10px; border: 1px solid rgba(127,127,127,.2); background: var(--bg2); color: var(--fg); outline: none; font-size: 14px; }
   .hidden { display: none !important; }
   .manager-block { margin: 10px 12px; padding: 12px; border-radius: 12px; background: rgba(36, 129, 204, 0.1); border: 1px solid rgba(36, 129, 204, 0.2); display: flex; align-items: center; justify-content: space-between; gap: 10px; }
   .manager-text { font-size: 13px; color: var(--fg); line-height: 1.4; }
@@ -56,6 +56,7 @@
   <div class="selects">
     <select id="cat-root"><option value="">Все категории</option></select>
     <select id="cat-sub" class="hidden"></select>
+    <select id="cat-sub-sub" class="hidden"></select>
   </div>
 </header>
 <div class="manager-block">
@@ -111,34 +112,83 @@ async function load() {
     document.getElementById('status').style.display = 'none'; renderCategories(); render(true);
   } catch (e) { document.getElementById('status').textContent = 'Ошибка загрузки каталога.'; }
 }
+
 function renderCategories() {
-  const rootSel = document.getElementById('cat-root'); const subSel = document.getElementById('cat-sub');
+  const rootSel = document.getElementById('cat-root');
+  const subSel = document.getElementById('cat-sub');
+  const subSubSel = document.getElementById('cat-sub-sub');
   const roots = state.categories.filter(c => !c.parent_id);
+  
   if (!roots.length) return;
-  rootSel.innerHTML = `<option value="">Все категории</option>` + roots.map(c => `<option value="${esc(c.id)}">${esc(c.name)}</option>`).join('');
+  
+  rootSel.innerHTML = `<option value="">Все категории</option>` + 
+    roots.map(c => `<option value="${esc(c.id)}">${esc(c.name)}</option>`).join('');
+    
   rootSel.onchange = () => {
     const rootId = rootSel.value;
-    if (!rootId) { subSel.classList.add('hidden'); state.activeCategory = null; applyFilters(); return; }
+    subSubSel.classList.add('hidden'); // сбрасываем 3-й уровень
+    
+    if (!rootId) {
+      subSel.classList.add('hidden'); state.activeCategory = null; applyFilters(); return;
+    }
     const subs = state.categories.filter(c => c.parent_id === rootId);
     if (subs.length > 0) {
-      subSel.innerHTML = `<option value="${esc(rootId)}">Все в этой категории</option>` + subs.map(c => `<option value="${esc(c.id)}">${esc(c.name)}</option>`).join('');
+      subSel.innerHTML = `<option value="${esc(rootId)}">Все в этой категории</option>` +
+        subs.map(c => `<option value="${esc(c.id)}">${esc(c.name)}</option>`).join('');
       subSel.classList.remove('hidden'); state.activeCategory = rootId;
-    } else { subSel.classList.add('hidden'); state.activeCategory = rootId; }
+    } else {
+      subSel.classList.add('hidden'); state.activeCategory = rootId;
+    }
     applyFilters();
   };
-  subSel.onchange = () => { state.activeCategory = subSel.value || rootSel.value; applyFilters(); };
+  
+  subSel.onchange = () => {
+    const subId = subSel.value;
+    if (!subId) {
+      subSubSel.classList.add('hidden');
+      state.activeCategory = rootSel.value;
+      applyFilters();
+      return;
+    }
+    
+    // Проверяем, есть ли у выбранной подкатегории свои "дети"
+    const subsSubs = state.categories.filter(c => c.parent_id === subId);
+    if (subsSubs.length > 0) {
+      subSubSel.innerHTML = `<option value="${esc(subId)}">Все в этой подкатегории</option>` +
+        subsSubs.map(c => `<option value="${esc(c.id)}">${esc(c.name)}</option>`).join('');
+      subSubSel.classList.remove('hidden');
+      state.activeCategory = subId;
+    } else {
+      subSubSel.classList.add('hidden');
+      state.activeCategory = subId;
+    }
+    applyFilters();
+  };
+  
+  subSubSel.onchange = () => {
+    state.activeCategory = subSubSel.value || subSel.value;
+    applyFilters();
+  };
 }
+
 function applyFilters() {
   let arr = state.products;
   if (state.activeCategory) {
     let validCatIds = [state.activeCategory];
-    const collectChildIds = (parentId) => { state.categories.forEach(c => { if (c.parent_id === parentId) { validCatIds.push(c.id); collectChildIds(c.id); } }); };
+    const collectChildIds = (parentId) => {
+      state.categories.forEach(c => {
+        if (c.parent_id === parentId) {
+          validCatIds.push(c.id); collectChildIds(c.id);
+        }
+      });
+    };
     collectChildIds(state.activeCategory);
     arr = arr.filter(p => validCatIds.includes(p.category_id));
   }
   if (state.searchQuery) arr = arr.filter(p => p.name.toLowerCase().includes(state.searchQuery.toLowerCase()));
   state.filtered = arr; render(true); window.scrollTo({ top: 0, behavior: 'instant' });
 }
+
 function render(reset) {
   const box = document.getElementById('products'); if (reset) { box.innerHTML = ''; state.shown = 0; }
   const slice = state.filtered.slice(state.shown, state.shown + PAGE_SIZE);
@@ -148,6 +198,7 @@ function render(reset) {
   `).join(''));
   state.shown += slice.length; document.getElementById('load-more').classList.toggle('hidden', state.shown >= state.filtered.length);
 }
+
 function updateCartBar() {
   const items = Object.values(state.cart).filter(i => i.quantity > 0);
   const total = items.reduce((s, i) => s + i.product.price * i.quantity, 0);
@@ -155,6 +206,7 @@ function updateCartBar() {
   document.getElementById('cart-count').textContent = count + ' шт'; document.getElementById('cart-total').textContent = fmt(total);
   document.getElementById('cart-bar').classList.toggle('visible', count > 0);
 }
+
 function renderCartItems() {
   const box = document.getElementById('cart-items'); const items = Object.values(state.cart).filter(i => i.quantity > 0);
   if (!items.length) { box.innerHTML = '<div class="muted">Корзина пуста</div>'; return; }
@@ -162,10 +214,12 @@ function renderCartItems() {
     <div class="cart-item" data-id="${esc(i.product.id)}"><div class="ci-name">${esc(i.product.name)}</div><div class="ci-controls"><button class="qty-btn" data-action="dec">−</button><span class="qty">${i.quantity}</span><button class="qty-btn" data-action="inc">+</button><span class="ci-sum">${fmt(i.product.price * i.quantity)}</span></div></div>
   `).join('');
 }
+
 function changeQty(id, delta) {
   const it = state.cart[id]; if (!it) return; it.quantity += delta; if (it.quantity <= 0) delete state.cart[id];
   renderCartItems(); updateCartBar(); if (!Object.keys(state.cart).length) document.getElementById('cart-modal').classList.remove('open');
 }
+
 function checkout() {
   const items = Object.values(state.cart).filter(i => i.quantity > 0);
   if (!items.length) { tg.showAlert('Корзина пуста'); return; }
@@ -179,6 +233,7 @@ function checkout() {
   if (JSON.stringify(payload).length > 4000) { tg.showAlert('Заказ слишком большой'); return; }
   tg.sendData(JSON.stringify(payload));
 }
+
 document.getElementById('search').addEventListener('input', e => { state.searchQuery = e.target.value.trim(); applyFilters(); });
 document.getElementById('load-more-btn').addEventListener('click', () => render(false));
 document.getElementById('products').addEventListener('click', e => { const btn = e.target.closest('.add'); if (!btn) return; const p = state.products.find(x => x.id === btn.dataset.id); if (p) { if (!state.cart[p.id]) state.cart[p.id] = { product: p, quantity: 0 }; state.cart[p.id].quantity++; updateCartBar(); } });
