@@ -1,8 +1,8 @@
 name: update-catalog
 on:
   schedule:
-    - cron: "0 * * * *"
-  workflow_dispatch:
+    - cron: "0 * * * *" # Каждый час
+  workflow_dispatch: # Позволяет запускать вручную
 
 permissions:
   contents: write
@@ -19,9 +19,9 @@ jobs:
         env:
           BOT_TOKEN: dummy
           ADMIN_IDS: "1"
-          WEBAPP_URL: https://example.com
+          WEBAPP_URL: https://example.com/
         run: python parser.py
-      - name: Commit catalog.json
+      - name: Commit catalog
         run: |
           git config user.name "catalog-bot"
           git config user.email "actions@users.noreply.github.com"

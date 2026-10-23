@@ -7,104 +7,50 @@
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <style>
   :root {
-    --bg: var(--tg-theme-bg-color, #fff);
-    --bg2: var(--tg-theme-secondary-bg-color, #f4f4f4);
-    --fg: var(--tg-theme-text-color, #000);
-    --hint: var(--tg-theme-hint-color, #999);
-    --accent: var(--tg-theme-button-color, #2481cc);
-    --accent-fg: var(--tg-theme-button-text-color, #fff);
+    --bg: var(--tg-theme-bg-color, #fff); --bg2: var(--tg-theme-secondary-bg-color, #f4f4f4);
+    --fg: var(--tg-theme-text-color, #000); --hint: var(--tg-theme-hint-color, #999);
+    --accent: var(--tg-theme-button-color, #2481cc); --accent-fg: var(--tg-theme-button-text-color, #fff);
     --link: var(--tg-theme-link-color, #2481cc);
   }
-  * { box-sizing: border-box; }
-  html, body { margin: 0; padding: 0; }
-  body {
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    background: var(--bg); color: var(--fg);
-    padding-bottom: 88px; -webkit-tap-highlight-color: transparent;
-  }
-  header {
-    position: sticky; top: 0; z-index: 10; background: var(--bg); padding: 8px 12px;
-    border-bottom: 1px solid rgba(127,127,127,.12); display: flex; flex-direction: column; gap: 8px;
-  }
-  #search {
-    width: 100%; padding: 10px 14px; font-size: 16px; border-radius: 10px;
-    border: 1px solid rgba(127,127,127,.2); background: var(--bg2); color: var(--fg); outline: none;
-  }
+  * { box-sizing: border-box; } html, body { margin: 0; padding: 0; }
+  body { font-family: -apple-system, sans-serif; background: var(--bg); color: var(--fg); padding-bottom: 88px; }
+  header { position: sticky; top: 0; z-index: 10; background: var(--bg); padding: 8px 12px; border-bottom: 1px solid rgba(127,127,127,.12); display: flex; flex-direction: column; gap: 8px; }
+  #search { width: 100%; padding: 10px 14px; font-size: 16px; border-radius: 10px; border: 1px solid rgba(127,127,127,.2); background: var(--bg2); color: var(--fg); outline: none; }
   #search:focus { border-color: var(--accent); }
   .selects { display: flex; gap: 8px; }
-  .selects select {
-    flex: 1; padding: 10px 14px; border-radius: 10px; border: 1px solid rgba(127,127,127,.2);
-    background: var(--bg2); color: var(--fg); outline: none; font-size: 14px; appearance: none;
-  }
-  .selects select:focus { border-color: var(--accent); }
+  .selects select { flex: 1; padding: 10px 14px; border-radius: 10px; border: 1px solid rgba(127,127,127,.2); background: var(--bg2); color: var(--fg); outline: none; font-size: 14px; }
   .hidden { display: none !important; }
-
-  .manager-block {
-    margin: 10px 12px; padding: 12px; border-radius: 12px;
-    background: rgba(36, 129, 204, 0.1); border: 1px solid rgba(36, 129, 204, 0.2);
-    display: flex; align-items: center; justify-content: space-between; gap: 10px;
-  }
+  .manager-block { margin: 10px 12px; padding: 12px; border-radius: 12px; background: rgba(36, 129, 204, 0.1); border: 1px solid rgba(36, 129, 204, 0.2); display: flex; align-items: center; justify-content: space-between; gap: 10px; }
   .manager-text { font-size: 13px; color: var(--fg); line-height: 1.4; }
-  .manager-btn {
-    background: var(--accent); color: var(--accent-fg); text-decoration: none;
-    padding: 8px 14px; border-radius: 8px; font-size: 13px; font-weight: 600; white-space: nowrap;
-  }
-
+  .manager-btn { background: var(--accent); color: var(--accent-fg); text-decoration: none; padding: 8px 14px; border-radius: 8px; font-size: 13px; font-weight: 600; }
   #status { padding: 12px; text-align: center; color: var(--hint); font-size: 14px; }
   #products { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; padding: 10px 12px; }
   @media (min-width: 480px) { #products { grid-template-columns: repeat(3, 1fr); } }
-  @media (min-width: 720px) { #products { grid-template-columns: repeat(4, 1fr); } }
-  
-  .product {
-    background: var(--bg2); border-radius: 12px; display: flex; flex-direction: column;
-    position: relative; padding: 10px;
-  }
+  .product { background: var(--bg2); border-radius: 12px; display: flex; flex-direction: column; position: relative; padding: 10px; }
   .info { display: flex; flex-direction: column; gap: 6px; flex: 1; }
-  .name {
-    font-size: 13px; line-height: 1.3; font-weight: 500;
-    display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical;
-    overflow: hidden; word-break: break-word;
-  }
+  .name { font-size: 13px; line-height: 1.3; font-weight: 500; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
   .price { font-weight: 700; font-size: 15px; color: var(--link); margin-top: auto; }
-  .add {
-    position: absolute; right: 8px; bottom: 8px; width: 34px; height: 34px; border-radius: 50%;
-    border: none; background: var(--accent); color: var(--accent-fg); font-size: 22px;
-    cursor: pointer; display: flex; align-items: center; justify-content: center;
-  }
-  
+  .add { position: absolute; right: 8px; bottom: 8px; width: 34px; height: 34px; border-radius: 50%; border: none; background: var(--accent); color: var(--accent-fg); font-size: 22px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
   #load-more { text-align: center; padding: 16px; }
   #load-more-btn { padding: 10px 24px; border-radius: 10px; border: 1px solid var(--accent); background: transparent; color: var(--accent); font-size: 15px; }
-  
-  .cart-bar {
-    position: fixed; left: 10px; right: 10px; bottom: 10px; background: var(--accent);
-    color: var(--accent-fg); border-radius: 14px; padding: 12px 16px;
-    display: none; align-items: center; justify-content: space-between; z-index: 20;
-  }
+  .cart-bar { position: fixed; left: 10px; right: 10px; bottom: 10px; background: var(--accent); color: var(--accent-fg); border-radius: 14px; padding: 12px 16px; display: none; align-items: center; justify-content: space-between; z-index: 20; }
   .cart-bar.visible { display: flex; }
   #open-cart { padding: 10px 20px; border-radius: 10px; border: none; background: #fff; color: var(--accent); font-size: 15px; font-weight: 600; }
-  
   .modal { position: fixed; inset: 0; z-index: 100; background: rgba(0,0,0,.5); display: none; align-items: flex-end; }
   .modal.open { display: flex; }
-  .modal-body {
-    background: var(--bg); width: 100%; border-radius: 16px 16px 0 0; max-height: 90vh; overflow-y: auto;
-    padding: 16px 16px 24px; display: flex; flex-direction: column; gap: 10px;
-  }
+  .modal-body { background: var(--bg); width: 100%; border-radius: 16px 16px 0 0; max-height: 90vh; overflow-y: auto; padding: 16px 16px 24px; display: flex; flex-direction: column; gap: 10px; }
   .cart-item { display: flex; flex-direction: column; gap: 6px; padding: 10px; border-radius: 10px; background: var(--bg2); }
   .ci-controls { display: flex; align-items: center; gap: 8px; }
   .qty-btn { width: 32px; height: 32px; border-radius: 8px; border: 1px solid rgba(127,127,127,.25); background: var(--bg); color: var(--fg); font-size: 18px; }
   .ci-sum { margin-left: auto; font-weight: 700; color: var(--link); }
   .muted { color: var(--hint); font-size: 14px; padding: 8px 0; }
   .field-group { display: flex; flex-direction: column; gap: 6px; margin-top: 8px; }
-  .modal-body input, .modal-body textarea, .modal-body select {
-    width: 100%; padding: 12px 14px; font-size: 16px; border-radius: 10px;
-    border: 1px solid rgba(127,127,127,.2); background: var(--bg2); color: var(--fg); font-family: inherit;
-  }
+  .modal-body input, .modal-body textarea, .modal-body select { width: 100%; padding: 12px 14px; font-size: 16px; border-radius: 10px; border: 1px solid rgba(127,127,127,.2); background: var(--bg2); color: var(--fg); font-family: inherit; }
   #checkout { margin-top: 8px; padding: 14px; border: none; border-radius: 12px; background: var(--accent); color: var(--accent-fg); font-size: 16px; font-weight: 600; }
   .secondary { padding: 12px; border: none; background: transparent; color: var(--hint); font-size: 15px; }
 </style>
 </head>
 <body>
-
 <header>
   <input id="search" placeholder="🔍 Поиск по названию" autocomplete="off">
   <div class="selects">
@@ -112,19 +58,13 @@
     <select id="cat-sub" class="hidden"></select>
   </div>
 </header>
-
 <div class="manager-block">
-  <div class="manager-text">Возникли проблемы или вопросы?<br>Напишите нашему менеджеру!</div>
-  <!-- Тут изменен ник на il0pka -->
+  <div class="manager-text">Возникли проблемы?<br>Напишите менеджеру!</div>
   <a href="https://t.me/il0pka" target="_blank" class="manager-btn">Написать</a>
 </div>
-
 <div id="status">Загрузка каталога…</div>
 <main id="products"></main>
-<div id="load-more" class="hidden">
-  <button id="load-more-btn">Показать ещё</button>
-</div>
-
+<div id="load-more" class="hidden"><button id="load-more-btn">Показать ещё</button></div>
 <div class="cart-bar" id="cart-bar">
   <div>
     <div style="font-size:12px;opacity:.85" id="cart-count">0 шт</div>
@@ -132,261 +72,121 @@
   </div>
   <button id="open-cart">Корзина</button>
 </div>
-
 <div class="modal" id="cart-modal">
   <div class="modal-body">
     <h3>Корзина</h3>
     <div id="cart-items"><div class="muted">Пусто</div></div>
-    
     <div class="field-group">
       <input id="name" placeholder="Ваше имя *" required>
       <input id="tg-username" placeholder="Telegram" disabled>
-      
       <select id="delivery-type">
         <option value="" disabled selected>Способ получения *</option>
         <option value="общага">Общага</option>
         <option value="шарага">Шарага</option>
         <option value="другое">Другое</option>
       </select>
-      
-      <div id="block-room" class="hidden">
-        <input id="room" placeholder="Комната *">
-      </div>
-      <div id="block-place" class="hidden">
-        <input id="place" placeholder="Место встречи *">
-      </div>
-      <div id="block-other" class="hidden">
-        <input id="other-text" placeholder="Детали доставки *">
-      </div>
-      
-      <textarea id="comment" placeholder="Комментарий к заказу" rows="2"></textarea>
+      <div id="block-room" class="hidden"><input id="room" placeholder="Комната *"></div>
+      <div id="block-place" class="hidden"><input id="place" placeholder="Место встречи *"></div>
+      <div id="block-other" class="hidden"><input id="other-text" placeholder="Детали доставки *"></div>
+      <textarea id="comment" placeholder="Комментарий" rows="2"></textarea>
     </div>
-    
     <button id="checkout">Отправить заказ</button>
     <button id="close-cart" class="secondary">Закрыть</button>
   </div>
 </div>
-
 <script>
-const tg = window.Telegram.WebApp;
-tg.ready(); tg.expand();
-
+const tg = window.Telegram.WebApp; tg.ready(); tg.expand();
 const state = { products: [], categories: [], activeCategory: null, searchQuery: '', filtered: [], shown: 0, cart: {} };
 const PAGE_SIZE = 60;
-
-const fmt = n => {
-  const num = Math.round(Number(n) * 100) / 100;
-  return num.toFixed(2).replace(/\.00$/, '').replace(/\B(?=(\d{3})+(?!\d))/g, ' ') + ' Br';
-};
-
+const fmt = n => (Math.round(Number(n) * 100) / 100).toFixed(2).replace(/\.00$/, '').replace(/\B(?=(\d{3})+(?!\d))/g, ' ') + ' Br';
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-
 const tgUser = tg.initDataUnsafe?.user;
-if (tgUser) {
-  document.getElementById('tg-username').value = tgUser.username ? '@' + tgUser.username : tgUser.first_name;
-}
+if (tgUser) document.getElementById('tg-username').value = tgUser.username ? '@' + tgUser.username : tgUser.first_name;
 
 async function load() {
   try {
     const r = await fetch('catalog.json', { cache: 'no-store' });
     const data = await r.json();
-    state.products = data.products || [];
-    state.categories = data.categories || [];
-    state.filtered = state.products;
-    
-    document.getElementById('status').style.display = 'none';
-    renderCategories();
-    render(true);
-  } catch (e) {
-    document.getElementById('status').textContent = 'Ошибка загрузки каталога.';
-  }
+    state.products = data.products || []; state.categories = data.categories || []; state.filtered = state.products;
+    document.getElementById('status').style.display = 'none'; renderCategories(); render(true);
+  } catch (e) { document.getElementById('status').textContent = 'Ошибка загрузки каталога.'; }
 }
-
 function renderCategories() {
-  const rootSel = document.getElementById('cat-root');
-  const subSel = document.getElementById('cat-sub');
+  const rootSel = document.getElementById('cat-root'); const subSel = document.getElementById('cat-sub');
   const roots = state.categories.filter(c => !c.parent_id);
-  
   if (!roots.length) return;
-  
-  rootSel.innerHTML = `<option value="">Все категории</option>` + 
-    roots.map(c => `<option value="${esc(c.id)}">${esc(c.name)}</option>`).join('');
-    
+  rootSel.innerHTML = `<option value="">Все категории</option>` + roots.map(c => `<option value="${esc(c.id)}">${esc(c.name)}</option>`).join('');
   rootSel.onchange = () => {
     const rootId = rootSel.value;
-    if (!rootId) {
-      subSel.classList.add('hidden');
-      state.activeCategory = null;
-      applyFilters();
-      return;
-    }
+    if (!rootId) { subSel.classList.add('hidden'); state.activeCategory = null; applyFilters(); return; }
     const subs = state.categories.filter(c => c.parent_id === rootId);
     if (subs.length > 0) {
-      subSel.innerHTML = `<option value="${esc(rootId)}">Все в этой категории</option>` +
-        subs.map(c => `<option value="${esc(c.id)}">${esc(c.name)}</option>`).join('');
-      subSel.classList.remove('hidden');
-      state.activeCategory = rootId;
-    } else {
-      subSel.classList.add('hidden');
-      state.activeCategory = rootId;
-    }
+      subSel.innerHTML = `<option value="${esc(rootId)}">Все в этой категории</option>` + subs.map(c => `<option value="${esc(c.id)}">${esc(c.name)}</option>`).join('');
+      subSel.classList.remove('hidden'); state.activeCategory = rootId;
+    } else { subSel.classList.add('hidden'); state.activeCategory = rootId; }
     applyFilters();
   };
-  
-  subSel.onchange = () => {
-    state.activeCategory = subSel.value || rootSel.value;
-    applyFilters();
-  };
+  subSel.onchange = () => { state.activeCategory = subSel.value || rootSel.value; applyFilters(); };
 }
-
 function applyFilters() {
   let arr = state.products;
-  
   if (state.activeCategory) {
     let validCatIds = [state.activeCategory];
-    
-    const collectChildIds = (parentId) => {
-      state.categories.forEach(c => {
-        if (c.parent_id === parentId) {
-          validCatIds.push(c.id);
-          collectChildIds(c.id);
-        }
-      });
-    };
+    const collectChildIds = (parentId) => { state.categories.forEach(c => { if (c.parent_id === parentId) { validCatIds.push(c.id); collectChildIds(c.id); } }); };
     collectChildIds(state.activeCategory);
-    
     arr = arr.filter(p => validCatIds.includes(p.category_id));
   }
-  
-  if (state.searchQuery) {
-    const q = state.searchQuery.toLowerCase();
-    arr = arr.filter(p => p.name.toLowerCase().includes(q));
-  }
-  
-  state.filtered = arr;
-  render(true);
-  window.scrollTo({ top: 0, behavior: 'instant' });
+  if (state.searchQuery) arr = arr.filter(p => p.name.toLowerCase().includes(state.searchQuery.toLowerCase()));
+  state.filtered = arr; render(true); window.scrollTo({ top: 0, behavior: 'instant' });
 }
-
 function render(reset) {
-  const box = document.getElementById('products');
-  if (reset) { box.innerHTML = ''; state.shown = 0; }
+  const box = document.getElementById('products'); if (reset) { box.innerHTML = ''; state.shown = 0; }
   const slice = state.filtered.slice(state.shown, state.shown + PAGE_SIZE);
-  
-  if (!slice.length && state.shown === 0) {
-    box.innerHTML = '<div id="status">Ничего не найдено</div>';
-    document.getElementById('load-more').classList.add('hidden');
-    return;
-  }
-  
+  if (!slice.length && state.shown === 0) { box.innerHTML = '<div id="status">Ничего не найдено</div>'; document.getElementById('load-more').classList.add('hidden'); return; }
   box.insertAdjacentHTML('beforeend', slice.map(p => `
-    <div class="product">
-      <div class="info">
-        <div class="name">${esc(p.name)}</div>
-        <div class="price">${fmt(p.price)}</div>
-      </div>
-      <button class="add" data-id="${esc(p.id)}">+</button>
-    </div>
+    <div class="product"><div class="info"><div class="name">${esc(p.name)}</div><div class="price">${fmt(p.price)}</div></div><button class="add" data-id="${esc(p.id)}">+</button></div>
   `).join(''));
-  
-  state.shown += slice.length;
-  document.getElementById('load-more').classList.toggle('hidden', state.shown >= state.filtered.length);
+  state.shown += slice.length; document.getElementById('load-more').classList.toggle('hidden', state.shown >= state.filtered.length);
 }
-
 function updateCartBar() {
   const items = Object.values(state.cart).filter(i => i.quantity > 0);
   const total = items.reduce((s, i) => s + i.product.price * i.quantity, 0);
   const count = items.reduce((s, i) => s + i.quantity, 0);
-  document.getElementById('cart-count').textContent = count + ' шт';
-  document.getElementById('cart-total').textContent = fmt(total);
+  document.getElementById('cart-count').textContent = count + ' шт'; document.getElementById('cart-total').textContent = fmt(total);
   document.getElementById('cart-bar').classList.toggle('visible', count > 0);
 }
-
 function renderCartItems() {
-  const box = document.getElementById('cart-items');
-  const items = Object.values(state.cart).filter(i => i.quantity > 0);
+  const box = document.getElementById('cart-items'); const items = Object.values(state.cart).filter(i => i.quantity > 0);
   if (!items.length) { box.innerHTML = '<div class="muted">Корзина пуста</div>'; return; }
   box.innerHTML = items.map(i => `
-    <div class="cart-item" data-id="${esc(i.product.id)}">
-      <div class="ci-name">${esc(i.product.name)}</div>
-      <div class="ci-controls">
-        <button class="qty-btn" data-action="dec">−</button>
-        <span class="qty">${i.quantity}</span>
-        <button class="qty-btn" data-action="inc">+</button>
-        <span class="ci-sum">${fmt(i.product.price * i.quantity)}</span>
-      </div>
-    </div>
+    <div class="cart-item" data-id="${esc(i.product.id)}"><div class="ci-name">${esc(i.product.name)}</div><div class="ci-controls"><button class="qty-btn" data-action="dec">−</button><span class="qty">${i.quantity}</span><button class="qty-btn" data-action="inc">+</button><span class="ci-sum">${fmt(i.product.price * i.quantity)}</span></div></div>
   `).join('');
 }
-
 function changeQty(id, delta) {
-  const it = state.cart[id];
-  if (!it) return;
-  it.quantity += delta;
-  if (it.quantity <= 0) delete state.cart[id];
-  renderCartItems(); updateCartBar();
-  if (!Object.keys(state.cart).length) document.getElementById('cart-modal').classList.remove('open');
+  const it = state.cart[id]; if (!it) return; it.quantity += delta; if (it.quantity <= 0) delete state.cart[id];
+  renderCartItems(); updateCartBar(); if (!Object.keys(state.cart).length) document.getElementById('cart-modal').classList.remove('open');
 }
-
 function checkout() {
   const items = Object.values(state.cart).filter(i => i.quantity > 0);
   if (!items.length) { tg.showAlert('Корзина пуста'); return; }
-  
-  const name = document.getElementById('name').value.trim();
-  const deliveryType = document.getElementById('delivery-type').value;
-  const room = document.getElementById('room').value.trim();
-  const place = document.getElementById('place').value.trim();
-  const otherText = document.getElementById('other-text').value.trim();
-  const comment = document.getElementById('comment').value.trim();
-  
-  if (name.length < 2) { tg.showAlert('Укажите имя'); return; }
-  if (!deliveryType) { tg.showAlert('Выберите способ получения'); return; }
-  if (deliveryType === 'общага' && !room) { tg.showAlert('Укажите комнату'); return; }
-  if (deliveryType === 'шарага' && !place) { tg.showAlert('Укажите место'); return; }
+  const name = document.getElementById('name').value.trim(); const deliveryType = document.getElementById('delivery-type').value;
+  const room = document.getElementById('room').value.trim(); const place = document.getElementById('place').value.trim();
+  const otherText = document.getElementById('other-text').value.trim(); const comment = document.getElementById('comment').value.trim();
+  if (name.length < 2) { tg.showAlert('Укажите имя'); return; } if (!deliveryType) { tg.showAlert('Выберите способ получения'); return; }
+  if (deliveryType === 'общага' && !room) { tg.showAlert('Укажите комнату'); return; } if (deliveryType === 'шарага' && !place) { tg.showAlert('Укажите место'); return; }
   if (deliveryType === 'другое' && !otherText) { tg.showAlert('Укажите детали'); return; }
-  
-  const payload = {
-    items: items.map(i => ({ id: i.product.id, name: i.product.name, price: Number(i.product.price), quantity: i.quantity })),
-    customer: { 
-      name, comment, delivery_type: deliveryType,
-      room: deliveryType === 'общага' ? room : '',
-      place: deliveryType === 'шарага' ? place : '',
-      other_text: deliveryType === 'другое' ? otherText : ''
-    },
-  };
-  
+  const payload = { items: items.map(i => ({ id: i.product.id, name: i.product.name, price: Number(i.product.price), quantity: i.quantity })), customer: { name, comment, delivery_type: deliveryType, room: deliveryType === 'общага' ? room : '', place: deliveryType === 'шарага' ? place : '', other_text: deliveryType === 'другое' ? otherText : '' } };
   if (JSON.stringify(payload).length > 4000) { tg.showAlert('Заказ слишком большой'); return; }
   tg.sendData(JSON.stringify(payload));
 }
-
 document.getElementById('search').addEventListener('input', e => { state.searchQuery = e.target.value.trim(); applyFilters(); });
 document.getElementById('load-more-btn').addEventListener('click', () => render(false));
-document.getElementById('products').addEventListener('click', e => {
-  const btn = e.target.closest('.add');
-  if (!btn) return;
-  const p = state.products.find(x => x.id === btn.dataset.id);
-  if (p) {
-    if (!state.cart[p.id]) state.cart[p.id] = { product: p, quantity: 0 };
-    state.cart[p.id].quantity++;
-    updateCartBar();
-  }
-});
+document.getElementById('products').addEventListener('click', e => { const btn = e.target.closest('.add'); if (!btn) return; const p = state.products.find(x => x.id === btn.dataset.id); if (p) { if (!state.cart[p.id]) state.cart[p.id] = { product: p, quantity: 0 }; state.cart[p.id].quantity++; updateCartBar(); } });
 document.getElementById('open-cart').addEventListener('click', () => { renderCartItems(); document.getElementById('cart-modal').classList.add('open'); });
 document.getElementById('close-cart').addEventListener('click', () => document.getElementById('cart-modal').classList.remove('open'));
-document.getElementById('cart-items').addEventListener('click', e => {
-  const btn = e.target.closest('.qty-btn');
-  if (!btn) return;
-  const row = btn.closest('.cart-item');
-  changeQty(row.dataset.id, btn.dataset.action === 'inc' ? 1 : -1);
-});
+document.getElementById('cart-items').addEventListener('click', e => { const btn = e.target.closest('.qty-btn'); if (!btn) return; const row = btn.closest('.cart-item'); changeQty(row.dataset.id, btn.dataset.action === 'inc' ? 1 : -1); });
 document.getElementById('checkout').addEventListener('click', checkout);
-document.getElementById('delivery-type').addEventListener('change', e => {
-  const val = e.target.value;
-  document.getElementById('block-room').classList.toggle('hidden', val !== 'общага');
-  document.getElementById('block-place').classList.toggle('hidden', val !== 'шарага');
-  document.getElementById('block-other').classList.toggle('hidden', val !== 'другое');
-});
-
+document.getElementById('delivery-type').addEventListener('change', e => { const val = e.target.value; document.getElementById('block-room').classList.toggle('hidden', val !== 'общага'); document.getElementById('block-place').classList.toggle('hidden', val !== 'шарага'); document.getElementById('block-other').classList.toggle('hidden', val !== 'другое'); });
 load();
 </script>
 </body>
