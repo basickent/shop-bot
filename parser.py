@@ -136,8 +136,8 @@ def run() -> None:
     print("[parser] fetch categories…")
     raw_categories = fetch_categories()
     
-    filtered_raw_cats = [c for c in raw_categories if "акци" not in (c.get("name") or "").lower()]
-    categories = [_norm_category(c) for c in filtered_raw_cats]
+    # ТУТ МЫ УБРАЛИ ФИЛЬТР, КОТОРЫЙ УДАЛЯЛ АКЦИИ
+    categories = [_norm_category(c) for c in raw_categories]
     valid_cat_ids = {c["id"] for c in categories}
     
     categories.append({"id": "fallback_other", "name": "Разное", "parent_id": None, "path_name": "Разное"})
