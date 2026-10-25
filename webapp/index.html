@@ -36,6 +36,7 @@
   .cart-bar { position: fixed; left: 10px; right: 10px; bottom: 10px; background: var(--accent); color: var(--accent-fg); border-radius: 14px; padding: 12px 16px; display: none; align-items: center; justify-content: space-between; z-index: 20; }
   .cart-bar.visible { display: flex; }
   #open-cart { padding: 10px 20px; border-radius: 10px; border: none; background: #fff; color: var(--accent); font-size: 15px; font-weight: 600; }
+  
   .modal { position: fixed; inset: 0; z-index: 100; background: rgba(0,0,0,.5); display: none; align-items: flex-end; }
   .modal.open { display: flex; }
   .modal-body { background: var(--bg); width: 100%; border-radius: 16px 16px 0 0; max-height: 90vh; overflow-y: auto; padding: 16px 16px 24px; display: flex; flex-direction: column; gap: 10px; }
@@ -48,6 +49,25 @@
   .modal-body input, .modal-body textarea, .modal-body select { width: 100%; padding: 12px 14px; font-size: 16px; border-radius: 10px; border: 1px solid rgba(127,127,127,.2); background: var(--bg2); color: var(--fg); font-family: inherit; }
   #checkout { margin-top: 8px; padding: 14px; border: none; border-radius: 12px; background: var(--accent); color: var(--accent-fg); font-size: 16px; font-weight: 600; }
   .secondary { padding: 12px; border: none; background: transparent; color: var(--hint); font-size: 15px; }
+
+  /* Экран Успеха */
+  #success-screen {
+    position: fixed; inset: 0; z-index: 200; background: var(--bg);
+    display: none; flex-direction: column; align-items: center; justify-content: center;
+    text-align: center; padding: 20px;
+  }
+  #success-screen.open { display: flex; }
+  .checkmark-circle {
+    width: 80px; height: 80px; border-radius: 50%; background: #4CAF50; color: white;
+    display: flex; align-items: center; justify-content: center; font-size: 40px; margin-bottom: 20px;
+    animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  }
+  @keyframes popIn {
+    0% { transform: scale(0); opacity: 0; }
+    100% { transform: scale(1); opacity: 1; }
+  }
+  .success-text { font-size: 20px; font-weight: bold; margin-bottom: 10px; }
+  .success-sub { font-size: 14px; color: var(--hint); }
 </style>
 </head>
 <body>
@@ -73,6 +93,7 @@
   </div>
   <button id="open-cart">Корзина</button>
 </div>
+
 <div class="modal" id="cart-modal">
   <div class="modal-body">
     <h3>Корзина</h3>
@@ -95,6 +116,14 @@
     <button id="close-cart" class="secondary">Закрыть</button>
   </div>
 </div>
+
+<!-- ЭКРАН УСПЕХА -->
+<div id="success-screen">
+  <div class="checkmark-circle">✓</div>
+  <div class="success-text">Спасибо за заказ!</div>
+  <div class="success-sub">Ваш заказ успешно оформлен.<br>Возвращаемся в чат...</div>
+</div>
+
 <script>
 const tg = window.Telegram.WebApp; tg.ready(); tg.expand();
 const state = { products: [], categories: [], activeCategory: null, searchQuery: '', filtered: [], shown: 0, cart: {} };
@@ -126,11 +155,8 @@ function renderCategories() {
     
   rootSel.onchange = () => {
     const rootId = rootSel.value;
-    subSubSel.classList.add('hidden'); // сбрасываем 3-й уровень
-    
-    if (!rootId) {
-      subSel.classList.add('hidden'); state.activeCategory = null; applyFilters(); return;
-    }
+    subSubSel.classList.add('hidden');
+    if (!rootId) { subSel.classList.add('hidden'); state.activeCategory = null; applyFilters(); return; }
     const subs = state.categories.filter(c => c.parent_id === rootId);
     if (subs.length > 0) {
       subSel.innerHTML = `<option value="${esc(rootId)}">Все в этой категории</option>` +
@@ -144,31 +170,19 @@ function renderCategories() {
   
   subSel.onchange = () => {
     const subId = subSel.value;
-    if (!subId) {
-      subSubSel.classList.add('hidden');
-      state.activeCategory = rootSel.value;
-      applyFilters();
-      return;
-    }
-    
-    // Проверяем, есть ли у выбранной подкатегории свои "дети"
+    if (!subId) { subSubSel.classList.add('hidden'); state.activeCategory = rootSel.value; applyFilters(); return; }
     const subsSubs = state.categories.filter(c => c.parent_id === subId);
     if (subsSubs.length > 0) {
       subSubSel.innerHTML = `<option value="${esc(subId)}">Все в этой подкатегории</option>` +
         subsSubs.map(c => `<option value="${esc(c.id)}">${esc(c.name)}</option>`).join('');
-      subSubSel.classList.remove('hidden');
-      state.activeCategory = subId;
+      subSubSel.classList.remove('hidden'); state.activeCategory = subId;
     } else {
-      subSubSel.classList.add('hidden');
-      state.activeCategory = subId;
+      subSubSel.classList.add('hidden'); state.activeCategory = subId;
     }
     applyFilters();
   };
   
-  subSubSel.onchange = () => {
-    state.activeCategory = subSubSel.value || subSel.value;
-    applyFilters();
-  };
+  subSubSel.onchange = () => { state.activeCategory = subSubSel.value || subSel.value; applyFilters(); };
 }
 
 function applyFilters() {
@@ -176,11 +190,7 @@ function applyFilters() {
   if (state.activeCategory) {
     let validCatIds = [state.activeCategory];
     const collectChildIds = (parentId) => {
-      state.categories.forEach(c => {
-        if (c.parent_id === parentId) {
-          validCatIds.push(c.id); collectChildIds(c.id);
-        }
-      });
+      state.categories.forEach(c => { if (c.parent_id === parentId) { validCatIds.push(c.id); collectChildIds(c.id); } });
     };
     collectChildIds(state.activeCategory);
     arr = arr.filter(p => validCatIds.includes(p.category_id));
@@ -226,12 +236,22 @@ function checkout() {
   const name = document.getElementById('name').value.trim(); const deliveryType = document.getElementById('delivery-type').value;
   const room = document.getElementById('room').value.trim(); const place = document.getElementById('place').value.trim();
   const otherText = document.getElementById('other-text').value.trim(); const comment = document.getElementById('comment').value.trim();
+  
   if (name.length < 2) { tg.showAlert('Укажите имя'); return; } if (!deliveryType) { tg.showAlert('Выберите способ получения'); return; }
   if (deliveryType === 'общага' && !room) { tg.showAlert('Укажите комнату'); return; } if (deliveryType === 'шарага' && !place) { tg.showAlert('Укажите место'); return; }
   if (deliveryType === 'другое' && !otherText) { tg.showAlert('Укажите детали'); return; }
+  
   const payload = { items: items.map(i => ({ id: i.product.id, name: i.product.name, price: Number(i.product.price), quantity: i.quantity })), customer: { name, comment, delivery_type: deliveryType, room: deliveryType === 'общага' ? room : '', place: deliveryType === 'шарага' ? place : '', other_text: deliveryType === 'другое' ? otherText : '' } };
   if (JSON.stringify(payload).length > 4000) { tg.showAlert('Заказ слишком большой'); return; }
-  tg.sendData(JSON.stringify(payload));
+  
+  // Показываем красивый экран успеха
+  document.getElementById('success-screen').classList.add('open');
+  try { tg.HapticFeedback.notificationOccurred('success'); } catch(e){}
+  
+  // Ждем 2 секунды и закрываем Web App, отправляя данные
+  setTimeout(() => {
+    tg.sendData(JSON.stringify(payload));
+  }, 2000);
 }
 
 document.getElementById('search').addEventListener('input', e => { state.searchQuery = e.target.value.trim(); applyFilters(); });

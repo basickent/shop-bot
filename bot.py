@@ -245,10 +245,13 @@ async def on_webapp_data(message: Message) -> None:
         try: await message.bot.send_message(admin_id, receipt, reply_markup=order_actions(order_id))
         except Exception: log.exception("Ошибка отправки админу %s", admin_id)
 
+       # Красивый ответ клиенту
     await message.answer(
         f"🌟 <b>Спасибо за заказ!</b>\n\n"
-        f"Заказ <b>№{order_id}</b> на сумму <b>{fmt_price(total)}</b> принят.\n"
-        f"Ожидайте доставку <b>во вторник вечером</b>.",
+        f"Ваш заказ <b>№{order_id}</b> на сумму <b>{fmt_price(total)}</b> успешно принят.\n\n"
+        f"⏳ Ожидайте свой заказ <b>после вторника</b>.\n\n"
+        f"Если у вас есть вопросы, обращайтесь к нашему менеджеру: <b>@il0pka</b>\n"
+        f"Хорошего дня! 🐻",
         reply_markup=shop_keyboard(),
     )
 

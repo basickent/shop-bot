@@ -28,4 +28,5 @@ def format_receipt(order_id: int, user, items: list[dict], total: float, custome
         lines.append(f"• {escape(i['name'])} × {i['quantity']} — {fmt_price(subtotal)}")
     
     lines += ["", f"<b>Итого: {fmt_price(total)}</b>"]
+    lines += ["", "<i>Связь с клиентом через менеджера:</i>", "<b>Менеджер:</b> @il0pka"]
     return "\n".join(lines)
